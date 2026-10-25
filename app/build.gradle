@@ -1,0 +1,57 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release signing is configured outside the repository.
+// Copy keystore.properties.example to keystore.properties and fill it in.
+def keystorePropsFile = rootProject.file('keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
+android {
+    namespace 'com.meshvoice'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId "com.meshvoice"
+        minSdk 29
+        targetSdk 36
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile rootProject.file(keystoreProps.getProperty('storeFile', 'release.jks'))
+                storePassword keystoreProps.getProperty('storePassword', '')
+                keyAlias keystoreProps.getProperty('keyAlias', 'release')
+                keyPassword keystoreProps.getProperty('keyPassword', '')
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+            // Without keystore.properties the release APK stays unsigned.
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
